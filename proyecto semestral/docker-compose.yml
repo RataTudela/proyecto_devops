@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  db:
+    image: mysql:8
+    container_name: tienda-db
+    environment:
+      MYSQL_ROOT_PASSWORD: admin123
+      MYSQL_DATABASE: ventas_db 
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3307:3306"
+
+  backend-ventas:
+    build: ./back-Ventas_SpringBoot/Springboot-API-REST
+    container_name: backend-ventas
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/ventas_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: admin123
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+
+  backend-despachos:
+    build: ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+    container_name: backend-despachos
+    environment:
+      # Asegúrate que la URL apunte a despacho_db
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/despacho_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: admin123
+    ports:
+      - "8082:8081" # <--- CAMBIA EL 8080 POR 8081
+    depends_on:
+      - db
+
+  frontend:
+    build: ./front_despacho
+    container_name: tienda-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend-ventas
+      - backend-despachos
+
+volumes:
+  dbdata:
