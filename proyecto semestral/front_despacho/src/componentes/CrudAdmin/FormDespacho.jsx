@@ -62,7 +62,7 @@ export const FormDespacho = ({ venta, onClose }) => {
         className="flex flex-col justify-center text-center px-24 text-xl"
       >
         <div className="mx-auto text-3xl font-bold mb-10 text-teal-600">
-          PROBANDO FORMULARIO DE DESPACHO
+          PROBANDO PROBANDO DE DESPACHO
         </div>
         <div className="mb-5">
           <label className="block font-bold mb-2">Fecha de despacho</label>
