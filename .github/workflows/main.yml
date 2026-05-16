@@ -3,10 +3,12 @@ name: CI/CD Tienda Perritos - Despliegue Unificado
 on:
   push:
     branches:
-      - master 
+      - master
 
 jobs:
-
+  # ==========================================
+  # TRABAJO 1: COMPILACIÓN Y DESPLIEGUE DEL FRONTEND
+  # ==========================================
   deploy-frontend:
     runs-on: ubuntu-latest
     steps:
@@ -27,7 +29,7 @@ jobs:
 
       - name: Build y Push Frontend a ECR
         run: |
-          docker build -t ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest ./front_despacho
+          docker build -t ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest ."//proyecto semestral/front_despacho"
           docker push ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest
 
       - name: Despliegue en EC2 Frontend via SSM (Instancia 1)
@@ -43,7 +45,9 @@ jobs:
               "docker run -d --name tienda-frontend -p 80:80 ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest"
             ]'
 
-
+  # ==========================================
+  # TRABAJO 2: COMPILACIÓN Y DESPLIEGUE DEL BACKEND DE VENTAS
+  # ==========================================
   deploy-backend-ventas:
     runs-on: ubuntu-latest
     steps:
@@ -64,7 +68,7 @@ jobs:
 
       - name: Build y Push Ventas a ECR
         run: |
-          docker build -t ${{ secrets.ECR_REPO_URL_BACKEND }}:latest ./back-Ventas_SpringBoot
+          docker build -t ${{ secrets.ECR_REPO_URL_BACKEND }}:latest ."//proyecto semestral/back-Ventas_SpringBoot"
           docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:latest
 
       - name: Despliegue en EC2 Backend via SSM (Instancia 2 - Puerto 8080)
@@ -80,6 +84,9 @@ jobs:
               "docker run -d --name backend-ventas -p 8080:8080 ${{ secrets.ECR_REPO_URL_BACKEND }}:latest"
             ]'
 
+  # ==========================================
+  # TRABAJO 3: COMPILACIÓN Y DESPLIEGUE DEL BACKEND DE DESPACHOS
+  # ==========================================
   deploy-backend-despachos:
     runs-on: ubuntu-latest
     steps:
@@ -100,7 +107,7 @@ jobs:
 
       - name: Build y Push Despachos a ECR
         run: |
-          docker build -t ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest ./back-Despachos_SpringBoot
+          docker build -t ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest ."//proyecto semestral/back-Despachos_SpringBoot"
           docker push ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest
 
       - name: Despliegue en EC2 Backend via SSM (Instancia 2 - Puerto 8081)
