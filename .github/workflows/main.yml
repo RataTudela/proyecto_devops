@@ -1,0 +1,117 @@
+name: CI/CD Tienda Perritos - Despliegue Unificado
+
+on:
+  push:
+    branches:
+      - master 
+
+jobs:
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del codigo
+        uses: actions/checkout@v3
+
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login en Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build y Push Frontend a ECR
+        run: |
+          docker build -t ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest ./front_despacho
+          docker push ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest
+
+      - name: Despliegue en EC2 Frontend via SSM (Instancia 1)
+        run: |
+          aws ssm send-command \
+            --instance-ids ${{ secrets.EC2_FRONTEND_INSTANCE_ID }} \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
+              "docker pull ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest",
+              "docker stop tienda-frontend || true",
+              "docker rm tienda-frontend || true",
+              "docker run -d --name tienda-frontend -p 80:80 ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest"
+            ]'
+
+
+  deploy-backend-ventas:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del codigo
+        uses: actions/checkout@v3
+
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login en Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build y Push Ventas a ECR
+        run: |
+          docker build -t ${{ secrets.ECR_REPO_URL_BACKEND }}:latest ./back-Ventas_SpringBoot
+          docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:latest
+
+      - name: Despliegue en EC2 Backend via SSM (Instancia 2 - Puerto 8080)
+        run: |
+          aws ssm send-command \
+            --instance-ids ${{ secrets.EC2_BACKEND_INSTANCE_ID }} \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
+              "docker pull ${{ secrets.ECR_REPO_URL_BACKEND }}:latest",
+              "docker stop backend-ventas || true",
+              "docker rm backend-ventas || true",
+              "docker run -d --name backend-ventas -p 8080:8080 ${{ secrets.ECR_REPO_URL_BACKEND }}:latest"
+            ]'
+
+  deploy-backend-despachos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del codigo
+        uses: actions/checkout@v3
+
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login en Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build y Push Despachos a ECR
+        run: |
+          docker build -t ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest ./back-Despachos_SpringBoot
+          docker push ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest
+
+      - name: Despliegue en EC2 Backend via SSM (Instancia 2 - Puerto 8081)
+        run: |
+          aws ssm send-command \
+            --instance-ids ${{ secrets.EC2_BACKEND_INSTANCE_ID }} \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
+              "docker pull ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest",
+              "docker stop backend-despachos || true",
+              "docker rm backend-despachos || true",
+              "docker run -d --name backend-despachos -p 8081:8081 ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest"
+            ]'
