@@ -83,7 +83,7 @@ jobs:
               "docker pull ${{ secrets.ECR_REPO_URL_BACKEND }}:latest",
               "docker stop backend-ventas || true",
               "docker rm backend-ventas || true",
-              "docker run -d --name backend-ventas -p 8080:8080 -e DB_ENDPOINT=10.0.140.208 -e DB_PORT=3306 -e DB_NAME=ventas_db -e DB_USERNAME=root -e DB_PASSWORD= ${{ secrets.ECR_REPO_URL_BACKEND }}:latest"
+              "docker run -d --name backend-ventas --network=host -e DB_ENDPOINT=127.0.0.1 -e DB_PORT=3306 -e DB_NAME=ventas_db -e DB_USERNAME=root -e DB_PASSWORD= ${{ secrets.ECR_REPO_URL_BACKEND }}:latest"
             ]'
 
  # ==========================================
@@ -123,5 +123,5 @@ jobs:
               "docker pull ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest",
               "docker stop backend-despachos || true",
               "docker rm backend-despachos || true",
-              "docker run -d --name backend-despachos -p 8081:8081 -e DB_ENDPOINT=10.0.140.208 -e DB_PORT=3306 -e DB_NAME=despacho_db -e DB_USERNAME=root -e DB_PASSWORD= ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest"
+              "docker run -d --name backend-despachos --network=host -e DB_ENDPOINT=127.0.0.1 -e DB_PORT=3306 -e DB_NAME=despacho_db -e DB_USERNAME=root -e DB_PASSWORD= ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest"
             ]'
