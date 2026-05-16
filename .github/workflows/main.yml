@@ -71,7 +71,7 @@ jobs:
         run: |
           docker build -t ${{ secrets.ECR_REPO_URL_BACKEND }}:latest .
           docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:latest
-        working-directory: ./proyecto semestral/back-Ventas_SpringBoot
+        working-directory: ./proyecto semestral/back-Ventas_SpringBoot/Springboot-API-REST
 
       - name: Despliegue en EC2 Backend via SSM (Instancia 2 - Puerto 8080)
         run: |
@@ -111,8 +111,8 @@ jobs:
         run: |
           docker build -t ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest .
           docker push ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest
-        working-directory: ./proyecto semestral/back-Despachos_SpringBoot
-
+        working-directory: ./proyecto semestral/back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+        
       - name: Despliegue en EC2 Backend via SSM (Instancia 2 - Puerto 8081)
         run: |
           aws ssm send-command \
