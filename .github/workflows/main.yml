@@ -86,7 +86,7 @@ jobs:
               "docker run -d --name backend-ventas -p 8080:8080 -e DB_ENDPOINT=10.0.140.208 -e DB_PORT=3306 -e DB_NAME=ventas_db -e DB_USERNAME=root -e DB_PASSWORD= ${{ secrets.ECR_REPO_URL_BACKEND }}:latest"
             ]'
 
-  # ==========================================
+ # ==========================================
   # TRABAJO 3: COMPILACIÓN Y DESPLIEGUE DEL BACKEND DE DESPACHOS
   # ==========================================
   deploy-backend-despachos:
@@ -111,7 +111,7 @@ jobs:
         run: |
           docker build -t ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest .
           docker push ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest
-        working-directory: ./proyecto semestral/back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+        working-directory: "./proyecto semestral/back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO"
         
       - name: Despliegue en EC2 Backend via SSM (Instancia 2 - Puerto 8081)
         run: |
