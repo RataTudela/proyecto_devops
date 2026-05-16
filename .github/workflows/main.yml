@@ -29,8 +29,9 @@ jobs:
 
       - name: Build y Push Frontend a ECR
         run: |
-          docker build -t ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest ."//proyecto semestral/front_despacho"
+          docker build -t ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest .
           docker push ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest
+        working-directory: ./proyecto semestral/front_despacho
 
       - name: Despliegue en EC2 Frontend via SSM (Instancia 1)
         run: |
@@ -68,8 +69,9 @@ jobs:
 
       - name: Build y Push Ventas a ECR
         run: |
-          docker build -t ${{ secrets.ECR_REPO_URL_BACKEND }}:latest ."//proyecto semestral/back-Ventas_SpringBoot"
+          docker build -t ${{ secrets.ECR_REPO_URL_BACKEND }}:latest .
           docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:latest
+        working-directory: ./proyecto semestral/back-Ventas_SpringBoot
 
       - name: Despliegue en EC2 Backend via SSM (Instancia 2 - Puerto 8080)
         run: |
@@ -107,8 +109,9 @@ jobs:
 
       - name: Build y Push Despachos a ECR
         run: |
-          docker build -t ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest ."//proyecto semestral/back-Despachos_SpringBoot"
+          docker build -t ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest .
           docker push ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest
+        working-directory: ./proyecto semestral/back-Despachos_SpringBoot
 
       - name: Despliegue en EC2 Backend via SSM (Instancia 2 - Puerto 8081)
         run: |
