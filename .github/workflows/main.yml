@@ -6,9 +6,6 @@ on:
       - master
 
 jobs:
-  # ==========================================
-  # TRABAJO 1: COMPILACIÓN Y DESPLIEGUE DEL FRONTEND
-  # ==========================================
   deploy-frontend:
     runs-on: ubuntu-latest
     steps:
@@ -33,7 +30,7 @@ jobs:
           docker push ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest
         working-directory: ./proyecto semestral/front_despacho
 
-      - name: Despliegue en EC2 Frontend via SSM (Instancia 1)
+      - name: Despliegue en EC2 Frontend via SSM
         run: |
           aws ssm send-command \
             --instance-ids ${{ secrets.EC2_FRONTEND_INSTANCE_ID }} \
@@ -46,9 +43,6 @@ jobs:
               "docker run -d --name tienda-frontend -p 80:80 ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest"
             ]'
 
-  # ==========================================
-  # TRABAJO 2: COMPILACIÓN Y DESPLIEGUE DEL BACKEND DE VENTAS
-  # ==========================================
   deploy-backend-ventas:
     runs-on: ubuntu-latest
     steps:
@@ -73,22 +67,17 @@ jobs:
           docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:latest
         working-directory: ./proyecto semestral/back-Ventas_SpringBoot/Springboot-API-REST
 
-      - name: Despliegue en EC2 Backend via SSM (Instancia 2 - Puerto 8080)
+      - name: Despliegue en EC2 Backend Ventas via SSM
         run: |
           aws ssm send-command \
             --instance-ids ${{ secrets.EC2_BACKEND_INSTANCE_ID }} \
             --document-name "AWS-RunShellScript" \
             --parameters 'commands=[
               "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
-              "docker pull ${{ secrets.ECR_REPO_URL_BACKEND }}:latest",
-              "docker stop backend-ventas || true",
-              "docker rm backend-ventas || true",
-              "docker run -d --name backend-ventas --network=host -e DB_ENDPOINT=127.0.0.1 -e DB_PORT=3306 -e DB_NAME=ventas_db -e DB_USERNAME=root -e DB_PASSWORD= ${{ secrets.ECR_REPO_URL_BACKEND }}:latest"
+              "docker-compose -f /home/ec2-user/docker-compose.yml pull",
+              "docker-compose -f /home/ec2-user/docker-compose.yml up -d"
             ]'
 
- # ==========================================
-  # TRABAJO 3: COMPILACIÓN Y DESPLIEGUE DEL BACKEND DE DESPACHOS tesst
-  # ==========================================
   deploy-backend-despachos:
     runs-on: ubuntu-latest
     steps:
@@ -112,16 +101,14 @@ jobs:
           docker build -t ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest .
           docker push ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest
         working-directory: "./proyecto semestral/back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO"
-        
-      - name: Despliegue en EC2 Backend via SSM (Instancia 2 - Puerto 8081)
+
+      - name: Despliegue en EC2 Backend Despachos via SSM
         run: |
           aws ssm send-command \
             --instance-ids ${{ secrets.EC2_BACKEND_INSTANCE_ID }} \
             --document-name "AWS-RunShellScript" \
             --parameters 'commands=[
               "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
-              "docker pull ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest",
-              "docker stop backend-despachos || true",
-              "docker rm backend-despachos || true",
-              "docker run -d --name backend-despachos --network=host -e DB_ENDPOINT=127.0.0.1 -e DB_PORT=3306 -e DB_NAME=despacho_db -e DB_USERNAME=root -e DB_PASSWORD= ${{ secrets.ECR_REPO_URL_BACKEND_DESPACHOS }}:latest"
+              "docker-compose -f /home/ec2-user/docker-compose.yml pull",
+              "docker-compose -f /home/ec2-user/docker-compose.yml up -d"
             ]'
