@@ -20,7 +20,7 @@ export const PruebaCards = () => {
           }}
         />
         <CardComponent
-          title="Revisar PROBACION WORKFLOW Ordenes de despacho 🚚"
+          title="Revisar PROBACION WORKFLOW 2 Ordenes de despacho 🚚"
           description="Consulta los despachos realizados, modifica los registros de intentos o cierra la orden"
           buttonText="Consultar"
           onClick={() => {
