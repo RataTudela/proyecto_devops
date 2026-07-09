@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-ventas
+  namespace: tienda
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend-ventas
+  template:
+    metadata:
+      labels:
+        app: backend-ventas
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: backend-ventas
+          image: 343348645750.dkr.ecr.us-east-1.amazonaws.com/backend-ventas:eks-v1 
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OTEL_JAVAAGENT_ENABLED
+              value: "false"                  
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://tienda-db:3306/ventas_db?allowPublicKeyRetrieval=true&useSSL=false"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /api/v1/ventas
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/v1/ventas
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-ventas
+  namespace: tienda
+spec:
+  selector:
+    app: backend-ventas
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend-ventas-hpa
+  namespace: tienda
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend-ventas
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

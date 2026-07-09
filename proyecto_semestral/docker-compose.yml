@@ -29,12 +29,11 @@ services:
     build: ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
     container_name: backend-despachos
     environment:
-      # Asegúrate que la URL apunte a despacho_db
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/despacho_db
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: admin123
     ports:
-      - "8082:8081" # <--- CAMBIA EL 8080 POR 8081
+      - "8082:8081" 
     depends_on:
       - db
 

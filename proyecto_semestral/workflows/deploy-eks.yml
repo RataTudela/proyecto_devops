@@ -1,0 +1,122 @@
+name: CI/CD Tienda EKS
+ 
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+ 
+env:
+  ECR_REPO_VENTAS: backend-ventas
+  ECR_REPO_DESPACHOS: backend-despachos
+  ECR_REPO_FRONTEND: tienda-frontend
+ 
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+ 
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+ 
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+ 
+      - name: Login a Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+ 
+      - name: Definir tag de imagen
+        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+ 
+      - name: Build & push BACKEND-VENTAS
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          cd backend-ventas
+          docker build -t $ECR_REGISTRY/${ECR_REPO_VENTAS}:${IMAGE_TAG} .
+          docker push $ECR_REGISTRY/${ECR_REPO_VENTAS}:${IMAGE_TAG}
+ 
+      - name: Build & push BACKEND-DESPACHOS
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          cd backend-despachos
+          docker build -t $ECR_REGISTRY/${ECR_REPO_DESPACHOS}:${IMAGE_TAG} .
+          docker push $ECR_REGISTRY/${ECR_REPO_DESPACHOS}:${IMAGE_TAG}
+ 
+      - name: Build & push FRONTEND
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          cd frontend
+          docker build -t $ECR_REGISTRY/${ECR_REPO_FRONTEND}:${IMAGE_TAG} .
+          docker push $ECR_REGISTRY/${ECR_REPO_FRONTEND}:${IMAGE_TAG}
+ 
+      - name: Instalar kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.29.0
+ 
+      - name: Configurar kubeconfig para EKS
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
+        run: |
+          aws eks update-kubeconfig \
+            --region $AWS_REGION \
+            --name $EKS_CLUSTER_NAME
+          kubectl config current-context
+ 
+      - name: Aplicar manifests base (namespace, DB, secrets)
+        env:
+          EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
+        run: |
+          kubectl apply -f k8s/tienda-db-completo.yaml -n $EKS_NAMESPACE
+ 
+      - name: Actualizar BACKEND-VENTAS en EKS
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
+        run: |
+          kubectl apply -f k8s/backend-ventas.yaml -n $EKS_NAMESPACE
+          kubectl set image deployment/backend-ventas \
+            backend-ventas=$ECR_REGISTRY/${ECR_REPO_VENTAS}:${IMAGE_TAG} \
+            -n $EKS_NAMESPACE
+          kubectl rollout status deployment/backend-ventas -n $EKS_NAMESPACE
+ 
+      - name: Actualizar BACKEND-DESPACHOS en EKS
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
+        run: |
+          kubectl apply -f k8s/backend-despachos.yaml -n $EKS_NAMESPACE
+          kubectl set image deployment/backend-despachos \
+            backend-despachos=$ECR_REGISTRY/${ECR_REPO_DESPACHOS}:${IMAGE_TAG} \
+            -n $EKS_NAMESPACE
+          kubectl rollout status deployment/backend-despachos -n $EKS_NAMESPACE
+ 
+      - name: Actualizar FRONTEND en EKS
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
+        run: |
+          kubectl apply -f k8s/frontend-nginx-configmap.yaml -n $EKS_NAMESPACE
+          kubectl apply -f k8s/frontend-deployment.yaml -n $EKS_NAMESPACE
+          kubectl set image deployment/tienda-frontend \
+            frontend=$ECR_REGISTRY/${ECR_REPO_FRONTEND}:${IMAGE_TAG} \
+            -n $EKS_NAMESPACE
+          kubectl rollout status deployment/tienda-frontend -n $EKS_NAMESPACE
+ 
+      - name: Ver pods y servicios
+        env:
+          EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
+        run: |
+          kubectl get pods -n $EKS_NAMESPACE
+          kubectl get svc -n $EKS_NAMESPACE
+          kubectl get hpa -n $EKS_NAMESPACE || true
+ 
