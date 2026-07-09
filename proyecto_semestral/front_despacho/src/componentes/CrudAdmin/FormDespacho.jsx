@@ -24,7 +24,6 @@ export const FormDespacho = ({ venta, onClose }) => {
     console.log("Datos del formulario:", jsonData);
 
    try {
-      // 1. Llamada a VENTAS (Quitamos http://192.168.30)
       await axios.put(
         `/api/v1/ventas/${venta.idVenta}`,
         jsonDataSales,
@@ -36,7 +35,6 @@ export const FormDespacho = ({ venta, onClose }) => {
         }
       );
 
-      // 2. Llamada a DESPACHOS (Quitamos http://192.168.320)
       await axios.post("/api/v1/despachos", jsonData, {
         headers: {
           'Content-Type': 'application/json',
